@@ -1,4 +1,5 @@
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -50,6 +51,11 @@ class Expense {
     public String getDescription() {
         return description;
     }
+
+    @Override
+    public String toString() {
+        return this.getName() + " $" + this.getAmount() + " " + this.getCategory().getCategoryName() + " " + this.getDate() + " " + this.getDescription();
+    }
 }
 
 class FinancialManager extends JFrame {
@@ -96,6 +102,11 @@ class FinancialManager extends JFrame {
     }
 
     private void showAddExpenseDialog() {
+        ImageIcon icon = new ImageIcon("src/add.png");
+        Image image = icon.getImage();
+        Image newImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+        icon = new ImageIcon(newImage);
+
         JTextField nameField = new JTextField();
         JTextField amountField = new JTextField();
         JTextField categoryField = new JTextField();
@@ -131,6 +142,11 @@ class FinancialManager extends JFrame {
     }
 
     private void showBrowseExpensesDialog() {
+        ImageIcon icon = new ImageIcon("src/browse.png");
+        Image image = icon.getImage();
+        Image newImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+        icon = new ImageIcon(newImage);
+
         StringBuilder expensesText = new StringBuilder("Expenses:\n");
 
         for (Expense expense : expenses) {
@@ -140,14 +156,24 @@ class FinancialManager extends JFrame {
         }
 
         JOptionPane.showMessageDialog(null, new JTextArea(expensesText.toString()),
-                "Browse Expenses", JOptionPane.PLAIN_MESSAGE);
+                "Browse Expenses", JOptionPane.PLAIN_MESSAGE, icon);
     }
 
     private void showDeleteExpenseDialog() {
+        ImageIcon icon = new ImageIcon("src/delete.png");
+        Image image = icon.getImage();
+        Image newImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+        icon = new ImageIcon(newImage);
+
+        if (expenses.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "There are no expenses to delete.",
+                    "Delete Expense", JOptionPane.INFORMATION_MESSAGE, icon);
+            return;
+        }
         Object[] expenseOptions = expenses.toArray();
         Object selectedExpense = JOptionPane.showInputDialog(null,
                 "Select an expense to delete:", "Delete Expense",
-                JOptionPane.QUESTION_MESSAGE, null, expenseOptions, expenseOptions[0]);
+                JOptionPane.QUESTION_MESSAGE, icon, expenseOptions, expenseOptions[0]);
 
         if (selectedExpense != null) {
             expenses.remove((Expense) selectedExpense);

@@ -92,14 +92,21 @@ class FinancialManager extends JFrame {
             }
         });
 
-        JPanel panel = new JPanel();
-        panel.add(addExpenseButton);
-        panel.add(browseExpensesButton);
-        panel.add(deleteExpenseButton);
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(10, 0, 10, 0); // Add space between buttons
+
+        panel.add(addExpenseButton, gbc);
+        panel.add(browseExpensesButton, gbc);
+        panel.add(deleteExpenseButton, gbc);
 
         this.getContentPane().add(panel);
 
         pack();
+        setSize(300, 200);
+        setLocationRelativeTo(null); // Center the window
     }
 
     private void showAddExpenseDialog() {

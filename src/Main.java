@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -126,7 +127,8 @@ class FinancialManager extends JFrame {
         panel.add(new JLabel("Description:"));
         panel.add(descriptionField);
 
-        int result = JOptionPane.showConfirmDialog(null, panel, "Add Expense", JOptionPane.OK_CANCEL_OPTION);
+        int result = JOptionPane.showConfirmDialog(null, panel,
+                "Add Expense", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, icon);
 
         if (result == JOptionPane.OK_OPTION) {
             String name = nameField.getText();
@@ -147,16 +149,34 @@ class FinancialManager extends JFrame {
         Image newImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
         icon = new ImageIcon(newImage);
 
-        StringBuilder expensesText = new StringBuilder("Expenses:\n");
+        DefaultTableModel model = new DefaultTableModel();
+        model.addColumn("Name");
+        model.addColumn("Amount");
+        model.addColumn("Category");
+        model.addColumn("Date");
+        model.addColumn("Description");
 
+        // Add a row to the model for each expense
         for (Expense expense : expenses) {
-            expensesText.append(String.format("Name: %s, Amount: %.2f, Category: %s, Date: %s, Description: %s\n",
-                    expense.getName(), expense.getAmount(), expense.getCategory().getCategoryName(),
-                    expense.getDate(), expense.getDescription()));
+            Object[] row = new Object[] {
+                    expense.getName(),
+                    expense.getAmount(),
+                    expense.getCategory().getCategoryName(),
+                    expense.getDate(),
+                    expense.getDescription()
+            };
+            model.addRow(row);
         }
 
-        JOptionPane.showMessageDialog(null, new JTextArea(expensesText.toString()),
-                "Browse Expenses", JOptionPane.PLAIN_MESSAGE, icon);
+        // Create table with model
+        JTable table = new JTable(model);
+
+        // Create scroll pane and add table to it
+        JScrollPane scrollPane = new JScrollPane(table);
+
+        // Show dialog with scroll pane
+        JOptionPane.showMessageDialog(null, scrollPane, "Browse Expenses", JOptionPane.PLAIN_MESSAGE, icon);
+
     }
 
     private void showDeleteExpenseDialog() {

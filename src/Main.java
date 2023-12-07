@@ -59,11 +59,11 @@ class Expense {
     }
 }
 
-class FinancialManager extends JFrame {
-    private List<Expense> expenses;
+class MainGUI extends JFrame{
+    private FinancialManager financialManager;
 
-    public FinancialManager() {
-        expenses = new ArrayList<>();
+    public MainGUI(FinancialManager financialManager){
+        this.financialManager = financialManager;
         initComponents();
     }
 
@@ -72,7 +72,8 @@ class FinancialManager extends JFrame {
         addExpenseButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                showAddExpenseDialog();
+                AddGUI addgui = new AddGUI(financialManager);
+                addgui.showAddExpenseDialog();
             }
         });
 
@@ -80,7 +81,8 @@ class FinancialManager extends JFrame {
         browseExpensesButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                showBrowseExpensesDialog();
+                BrowseGUI browsegui = new BrowseGUI(financialManager);
+                browsegui.showBrowseExpensesDialog();
             }
         });
 
@@ -88,7 +90,8 @@ class FinancialManager extends JFrame {
         deleteExpenseButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                showDeleteExpenseDialog();
+                DeleteGUI deletegui = new DeleteGUI(financialManager);
+                deletegui.showDeleteExpenseDialog();
             }
         });
 
@@ -109,7 +112,27 @@ class FinancialManager extends JFrame {
         setLocationRelativeTo(null); // Center the window
     }
 
-    private void showAddExpenseDialog() {
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                FinancialManager financialManager = new FinancialManager();
+                MainGUI maingui = new MainGUI(financialManager);
+                maingui.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                maingui.setVisible(true);
+            }
+        });
+    }
+}
+
+class AddGUI extends JFrame{
+    private FinancialManager financialManager;
+
+    public AddGUI(FinancialManager financialManager) {
+        this.financialManager = financialManager;
+    }
+
+    public void showAddExpenseDialog() {
         ImageIcon icon = new ImageIcon("src/add.png");
         Image image = icon.getImage();
         Image newImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
@@ -145,12 +168,19 @@ class FinancialManager extends JFrame {
             String description = descriptionField.getText();
 
             Expense newExpense = new Expense(name, amount, category, date, description);
-            expenses.add(newExpense);
+            financialManager.addExpense(newExpense);
 
         }
     }
+}
 
-    private void showBrowseExpensesDialog() {
+class BrowseGUI extends JFrame{
+    private FinancialManager financialManager;
+
+    public BrowseGUI(FinancialManager financialManager) {
+        this.financialManager = financialManager;
+    }
+    public void showBrowseExpensesDialog() {
         ImageIcon icon = new ImageIcon("src/browse.png");
         Image image = icon.getImage();
         Image newImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
@@ -164,7 +194,7 @@ class FinancialManager extends JFrame {
         model.addColumn("Description");
 
         // Add a row to the model for each expense
-        for (Expense expense : expenses) {
+        for (Expense expense : financialManager.getExpenses()) {
             Object[] row = new Object[] {
                     expense.getName(),
                     expense.getAmount(),
@@ -185,38 +215,53 @@ class FinancialManager extends JFrame {
         JOptionPane.showMessageDialog(null, scrollPane, "Browse Expenses", JOptionPane.PLAIN_MESSAGE, icon);
 
     }
+}
+    
+class DeleteGUI extends JFrame{
+    private FinancialManager financialManager;
 
-    private void showDeleteExpenseDialog() {
+    public DeleteGUI(FinancialManager financialManager) {
+        this.financialManager = financialManager;
+    }
+    public void showDeleteExpenseDialog() {
         ImageIcon icon = new ImageIcon("src/delete.png");
         Image image = icon.getImage();
         Image newImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
         icon = new ImageIcon(newImage);
 
-        if (expenses.isEmpty()) {
+        if (financialManager.getExpenses().isEmpty()) {
             JOptionPane.showMessageDialog(null, "There are no expenses to delete.",
                     "Delete Expense", JOptionPane.INFORMATION_MESSAGE, icon);
             return;
         }
-        Object[] expenseOptions = expenses.toArray();
+        Object[] expenseOptions = financialManager.getExpenses().toArray();
         Object selectedExpense = JOptionPane.showInputDialog(null,
                 "Select an expense to delete:", "Delete Expense",
                 JOptionPane.QUESTION_MESSAGE, icon, expenseOptions, expenseOptions[0]);
 
         if (selectedExpense != null) {
-            expenses.remove((Expense) selectedExpense);
+            financialManager.deleteExpense((Expense) selectedExpense);
             JOptionPane.showMessageDialog(null, "Expense deleted successfully.",
                     "Delete Expense", JOptionPane.INFORMATION_MESSAGE);
         }
     }
+}
+    
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                FinancialManager financialManager = new FinancialManager();
-                financialManager.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                financialManager.setVisible(true);
-            }
-        });
+
+class FinancialManager{
+    private List<Expense> expenses;
+
+    public FinancialManager() {
+        expenses = new ArrayList<>();
+    }
+    public void addExpense(Expense expense) {
+        expenses.add(expense);
+    }
+    public List<Expense> getExpenses() {
+        return expenses;
+    }
+    public void deleteExpense(Expense expense) {
+        expenses.remove(expense);
     }
 }

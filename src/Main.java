@@ -3,8 +3,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Calendar;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 
 class Category {
@@ -125,6 +124,15 @@ class MainGUI extends JFrame{
             }
         });
 
+        JButton monthlyReportButton = new JButton("Monthly Report");
+        monthlyReportButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                MonthlyReportGUI monthlyReportGUI = new MonthlyReportGUI(financialManager);
+                monthlyReportGUI.showMonthlyReportDialog();
+            }
+        });
+
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -134,11 +142,12 @@ class MainGUI extends JFrame{
         panel.add(addExpenseButton, gbc);
         panel.add(browseExpensesButton, gbc);
         panel.add(deleteExpenseButton, gbc);
+        panel.add(monthlyReportButton, gbc);
 
         this.getContentPane().add(panel);
 
         pack();
-        setSize(300, 200);
+        setSize(300, 240);
         setLocationRelativeTo(null); // Center the window
     }
 
@@ -166,7 +175,7 @@ class AddGUI extends JFrame{
     }
 
     public void showAddExpenseDialog() {
-        ImageIcon icon = new ImageIcon("src/add.png");
+        ImageIcon icon = new ImageIcon("image/add.png");
         Image image = icon.getImage();
         Image newImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
         icon = new ImageIcon(newImage);
@@ -285,7 +294,7 @@ class BrowseGUI extends JFrame{
         this.financialManager = financialManager;
     }
     public void showBrowseExpensesDialog() {
-        ImageIcon icon = new ImageIcon("src/browse.png");
+        ImageIcon icon = new ImageIcon("image/browse.png");
         Image image = icon.getImage();
         Image newImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
         icon = new ImageIcon(newImage);
@@ -320,7 +329,6 @@ class BrowseGUI extends JFrame{
     }
 }
 
-    
 class DeleteGUI extends JFrame{
     private FinancialManager financialManager;
 
@@ -328,7 +336,7 @@ class DeleteGUI extends JFrame{
         this.financialManager = financialManager;
     }
     public void showDeleteExpenseDialog() {
-        ImageIcon icon = new ImageIcon("src/delete.png");
+        ImageIcon icon = new ImageIcon("image/delete.png");
         Image image = icon.getImage();
         Image newImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
         icon = new ImageIcon(newImage);
@@ -346,11 +354,95 @@ class DeleteGUI extends JFrame{
         if (selectedExpense != null) {
             financialManager.deleteExpense((Expense) selectedExpense);
             JOptionPane.showMessageDialog(null, "Expense deleted successfully.",
-                    "Delete Expense", JOptionPane.INFORMATION_MESSAGE);
+                    "Delete Expense", JOptionPane.INFORMATION_MESSAGE, icon);
         }
     }
 }
-    
+
+class MonthlyReportGUI extends JFrame{
+    private FinancialManager financialManager;
+    private JComboBox<Integer> yearComboBox;
+    private JComboBox<Integer> monthComboBox;
+
+    public MonthlyReportGUI(FinancialManager financialManager) {
+        this.financialManager = financialManager;
+    }
+
+    public void showMonthlyReportDialog() {
+        ImageIcon icon = new ImageIcon("image/report.png");
+        Image image = icon.getImage();
+        Image newImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+        icon = new ImageIcon(newImage);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+
+        yearComboBox = new JComboBox<>();
+        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+        for (int i = currentYear - 10; i <= currentYear + 10; i++) {
+            yearComboBox.addItem(i);
+        }
+
+        monthComboBox = new JComboBox<>();
+        for (int i = 1; i <= 12; i++) {
+            monthComboBox.addItem(i);
+        }
+
+        panel.add(new JLabel("Year:"));
+        panel.add(yearComboBox);
+        panel.add(new JLabel("Month:"));
+        panel.add(monthComboBox);
+
+        int result = JOptionPane.showConfirmDialog(null, panel,
+                "Monthly Report", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, icon);
+
+//        if (result == JOptionPane.OK_OPTION) {
+//            int selectedYear = (Integer) yearComboBox.getSelectedItem();
+//            int selectedMonth = (Integer) monthComboBox.getSelectedItem();
+//            List<Expense> expensesByYearAndMonth = financialManager.getExpensesByYearAndMonth(selectedYear, selectedMonth);
+//            double totalExpense = 0;
+//            for (Expense expense : expensesByYearAndMonth) {
+//                totalExpense += expense.getAmount();
+//            }
+//            JOptionPane.showMessageDialog(null, "Total Expense: " + totalExpense,
+//                    "Monthly Report", JOptionPane.INFORMATION_MESSAGE, icon);
+//        }
+        if (result == JOptionPane.OK_OPTION) {
+            int selectedYear = (Integer) yearComboBox.getSelectedItem();
+            int selectedMonth = (Integer) monthComboBox.getSelectedItem();
+            List<Expense> expenses = financialManager.getExpensesByYearAndMonth(selectedYear, selectedMonth);
+            Map<String, Double> expensesPerCategory = new HashMap<>();
+            Map<String, Double> budgetPerCategory = new HashMap<>();
+            for (Expense expense : expenses) {
+                String category = expense.getCategory().getCategoryName();
+                double budget = expense.getCategory().getMonthlyBudget();
+                expensesPerCategory.put(category, expensesPerCategory.getOrDefault(category, 0.0) + expense.getAmount());
+                budgetPerCategory.put(category, budget);
+            }
+
+            // Create a table to display the results
+            DefaultTableModel model = new DefaultTableModel();
+            model.addColumn("Category");
+            model.addColumn("Expenses");
+            model.addColumn("Budget");
+            model.addColumn("Percentage");
+
+            for (Map.Entry<String, Double> entry : expensesPerCategory.entrySet()) {
+                double percentage = (entry.getValue() / budgetPerCategory.get(entry.getKey())) * 100;
+                model.addRow(new Object[] {entry.getKey(), entry.getValue(), budgetPerCategory.get(entry.getKey()), percentage + "%"});
+            }
+
+            JTable table = new JTable(model);
+            JScrollPane scrollPane = new JScrollPane(table);
+
+            JOptionPane.showMessageDialog(this, scrollPane, "Monthly Report", JOptionPane.PLAIN_MESSAGE);
+        }
+
+    }
+
+
+}
 
 class FinancialManager{
     private List<Expense> expenses;
@@ -389,6 +481,17 @@ class FinancialManager{
         }
         return null; // Or handle this case as per your application's requirements
     }
+
+    public List<Expense> getExpensesByYearAndMonth(int year, int month) {
+        List<Expense> expensesByYearAndMonth = new ArrayList<>();
+        for (Expense expense : expenses) {
+            if (expense.getYear() == year && expense.getMonth() == month) {
+                expensesByYearAndMonth.add(expense);
+            }
+        }
+        return expensesByYearAndMonth;
+    }
+
     private void updateMonthlyExpenses(Expense expense) {
         MonthlyExpense monthlyExpense = findOrCreateMonthlyExpense(expense.getYear(), expense.getMonth(), expense.getCategory());
         monthlyExpense.addExpense(expense.getAmount());

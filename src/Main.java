@@ -8,9 +8,11 @@ import java.util.List;
 
 class Category {
     private String categoryName;
+    private double monthlyBudget;
 
-    public Category(String categoryName) {
+    public Category(String categoryName, double monthlyBudget) {
         this.categoryName = categoryName;
+        this.monthlyBudget = monthlyBudget;
     }
 
     public String getCategoryName() {
@@ -59,11 +61,11 @@ class Expense {
     }
 }
 
-class FinancialManager extends JFrame {
-    private List<Expense> expenses;
+class MainGUI extends JFrame{
+    private FinancialManager financialManager;
 
-    public FinancialManager() {
-        expenses = new ArrayList<>();
+    public MainGUI(FinancialManager financialManager){
+        this.financialManager = financialManager;
         initComponents();
     }
 
@@ -72,7 +74,8 @@ class FinancialManager extends JFrame {
         addExpenseButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                showAddExpenseDialog();
+                AddGUI addgui = new AddGUI(financialManager);
+                addgui.showAddExpenseDialog();
             }
         });
 
@@ -80,7 +83,8 @@ class FinancialManager extends JFrame {
         browseExpensesButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                showBrowseExpensesDialog();
+                BrowseGUI browsegui = new BrowseGUI(financialManager);
+                browsegui.showBrowseExpensesDialog();
             }
         });
 
@@ -88,7 +92,8 @@ class FinancialManager extends JFrame {
         deleteExpenseButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                showDeleteExpenseDialog();
+                DeleteGUI deletegui = new DeleteGUI(financialManager);
+                deletegui.showDeleteExpenseDialog();
             }
         });
 
@@ -109,7 +114,28 @@ class FinancialManager extends JFrame {
         setLocationRelativeTo(null); // Center the window
     }
 
-    private void showAddExpenseDialog() {
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                FinancialManager financialManager = new FinancialManager();
+                MainGUI maingui = new MainGUI(financialManager);
+                maingui.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                maingui.setVisible(true);
+            }
+        });
+    }
+}
+
+class AddGUI extends JFrame{
+    private FinancialManager financialManager;
+    private JComboBox<String> categoryComboBox;
+
+    public AddGUI(FinancialManager financialManager) {
+        this.financialManager = financialManager;
+    }
+
+    public void showAddExpenseDialog() {
         ImageIcon icon = new ImageIcon("src/add.png");
         Image image = icon.getImage();
         Image newImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
@@ -117,18 +143,28 @@ class FinancialManager extends JFrame {
 
         JTextField nameField = new JTextField();
         JTextField amountField = new JTextField();
-        JTextField categoryField = new JTextField();
+        //JTextField categoryField = new JTextField();
         JTextField dateField = new JTextField();
         JTextField descriptionField = new JTextField();
 
+        categoryComboBox = new JComboBox<>();
+        updateCategoryComboBox();
+        //categoryComboBox.addItem("Add Category...");
         JPanel panel = new JPanel();
+
+        categoryComboBox.addActionListener(e -> {
+            if ("Add Category...".equals(categoryComboBox.getSelectedItem())) {
+                showAddCategoryDialog();
+            }
+        });
+
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.add(new JLabel("Name:"));
         panel.add(nameField);
         panel.add(new JLabel("Amount:"));
         panel.add(amountField);
         panel.add(new JLabel("Category:"));
-        panel.add(categoryField);
+        panel.add(categoryComboBox);
         panel.add(new JLabel("Date:"));
         panel.add(dateField);
         panel.add(new JLabel("Description:"));
@@ -138,19 +174,69 @@ class FinancialManager extends JFrame {
                 "Add Expense", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, icon);
 
         if (result == JOptionPane.OK_OPTION) {
-            String name = nameField.getText();
-            double amount = Float.parseFloat(amountField.getText());
-            Category category = new Category(categoryField.getText());
-            String date = dateField.getText();
-            String description = descriptionField.getText();
+            try{
+                String name = nameField.getText();
+                double amount = Float.parseFloat(amountField.getText());
+                String categoryName = (String)categoryComboBox.getSelectedItem();
+                Category category = financialManager.getCategoryByName(categoryName);
+                String date = dateField.getText();
+                String description = descriptionField.getText();
 
-            Expense newExpense = new Expense(name, amount, category, date, description);
-            expenses.add(newExpense);
+                Expense newExpense = new Expense(name, amount, category, date, description);
+                financialManager.addExpense(newExpense);
+            }catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "Please enter a valid amount", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+        }
+
+            
 
         }
     }
 
-    private void showBrowseExpensesDialog() {
+    private void updateCategoryComboBox() {
+        String currentSelection = (String) categoryComboBox.getSelectedItem();
+
+        categoryComboBox.removeAllItems();
+        for (Category categoryName : financialManager.getCategories()) {
+            categoryComboBox.addItem(categoryName.getCategoryName());
+        }
+        categoryComboBox.addItem("Add Category..."); // 保证这个选项始终在最后
+
+        if (currentSelection != null) {
+            categoryComboBox.setSelectedItem(currentSelection);
+        }
+    }
+
+    private void showAddCategoryDialog() {
+        JTextField nameField = new JTextField();
+        JTextField budgetField = new JTextField();
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.add(new JLabel("Category Name:"));
+        panel.add(nameField);
+        panel.add(new JLabel("Monthly Budget:"));
+        panel.add(budgetField);
+
+        int result = JOptionPane.showConfirmDialog(this, panel, "Add Category", JOptionPane.OK_CANCEL_OPTION);
+
+        if (result == JOptionPane.OK_OPTION) {
+            String name = nameField.getText();
+            double monthlyBudget = Double.parseDouble(budgetField.getText());
+            financialManager.addCategory(name, monthlyBudget);
+            updateCategoryComboBox(); // 更新下拉菜单
+        }
+    }
+
+}
+
+class BrowseGUI extends JFrame{
+    private FinancialManager financialManager;
+
+    public BrowseGUI(FinancialManager financialManager) {
+        this.financialManager = financialManager;
+    }
+    public void showBrowseExpensesDialog() {
         ImageIcon icon = new ImageIcon("src/browse.png");
         Image image = icon.getImage();
         Image newImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
@@ -164,7 +250,7 @@ class FinancialManager extends JFrame {
         model.addColumn("Description");
 
         // Add a row to the model for each expense
-        for (Expense expense : expenses) {
+        for (Expense expense : financialManager.getExpenses()) {
             Object[] row = new Object[] {
                     expense.getName(),
                     expense.getAmount(),
@@ -183,40 +269,69 @@ class FinancialManager extends JFrame {
 
         // Show dialog with scroll pane
         JOptionPane.showMessageDialog(null, scrollPane, "Browse Expenses", JOptionPane.PLAIN_MESSAGE, icon);
-
     }
+}
 
-    private void showDeleteExpenseDialog() {
+    
+class DeleteGUI extends JFrame{
+    private FinancialManager financialManager;
+
+    public DeleteGUI(FinancialManager financialManager) {
+        this.financialManager = financialManager;
+    }
+    public void showDeleteExpenseDialog() {
         ImageIcon icon = new ImageIcon("src/delete.png");
         Image image = icon.getImage();
         Image newImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
         icon = new ImageIcon(newImage);
 
-        if (expenses.isEmpty()) {
+        if (financialManager.getExpenses().isEmpty()) {
             JOptionPane.showMessageDialog(null, "There are no expenses to delete.",
                     "Delete Expense", JOptionPane.INFORMATION_MESSAGE, icon);
             return;
         }
-        Object[] expenseOptions = expenses.toArray();
+        Object[] expenseOptions = financialManager.getExpenses().toArray();
         Object selectedExpense = JOptionPane.showInputDialog(null,
                 "Select an expense to delete:", "Delete Expense",
                 JOptionPane.QUESTION_MESSAGE, icon, expenseOptions, expenseOptions[0]);
 
         if (selectedExpense != null) {
-            expenses.remove((Expense) selectedExpense);
+            financialManager.deleteExpense((Expense) selectedExpense);
             JOptionPane.showMessageDialog(null, "Expense deleted successfully.",
                     "Delete Expense", JOptionPane.INFORMATION_MESSAGE);
         }
     }
+}
+    
+class FinancialManager{
+    private List<Expense> expenses;
+    private List<Category> categories;
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                FinancialManager financialManager = new FinancialManager();
-                financialManager.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                financialManager.setVisible(true);
+    public FinancialManager() {
+        expenses = new ArrayList<>();
+        categories = new ArrayList<>();
+    }
+    public void addExpense(Expense expense) {
+        expenses.add(expense);
+    }
+    public List<Expense> getExpenses() {
+        return expenses;
+    }
+    public void deleteExpense(Expense expense) {
+        expenses.remove(expense);
+    }
+    public void addCategory(String name, double monthlyBudget) {
+        categories.add(new Category(name, monthlyBudget));
+    }
+    public List<Category> getCategories() {
+        return categories;
+    }
+    public Category getCategoryByName(String name) {
+        for (Category category : categories) {
+            if (category.getCategoryName().equals(name)) {
+                return category;
             }
-        });
+        }
+        return null; // Or handle this case as per your application's requirements
     }
 }

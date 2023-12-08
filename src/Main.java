@@ -236,14 +236,9 @@ class AddGUI extends JFrame{
                 financialManager.addExpense(newExpense);
             }catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(null, "Please enter a valid amount", "Invalid Input", JOptionPane.ERROR_MESSAGE);
-        }
-
-            Expense newExpense = new Expense(name, amount, category, date, description);
-            financialManager.addExpense(newExpense);
-
+            }
         }
     }
-}
 
 
     private void updateCategoryComboBox() {

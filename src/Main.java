@@ -3,6 +3,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Calendar;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,51 +16,77 @@ class Category {
         this.monthlyBudget = monthlyBudget;
     }
 
-    public String getCategoryName() {
-        return categoryName;
-    }
+    public String getCategoryName() {return categoryName;}
+
+    public double getMonthlyBudget() {return monthlyBudget;}
 }
 
 class Expense {
     private String name;
     private double amount;
     private Category category;
-    private String date;
+    private int year;
+    private int month;
     private String description;
 
-    public Expense(String name, double amount, Category category, String date, String description) {
+    public Expense(String name, double amount, Category category, int year, int month, String description) {
         this.name = name;
         this.amount = amount;
         this.category = category;
-        this.date = date;
+        this.year = year;
+        this.month = month;
         this.description = description;
     }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() {return name;}
 
-    public double getAmount() {
-        return amount;
-    }
+    public double getAmount() {return amount;}
 
-    public Category getCategory() {
-        return category;
-    }
+    public Category getCategory() {return category;}
 
-    public String getDate() {
-        return date;
-    }
+    public int getYear() {return year;}
 
-    public String getDescription() {
-        return description;
-    }
+    public int getMonth() {return month;}
+
+    public String getDescription() {return description;}
 
     @Override
     public String toString() {
-        return this.getName() + " $" + this.getAmount() + " " + this.getCategory().getCategoryName() + " " + this.getDate() + " " + this.getDescription();
+        return this.getName() + " $" + this.getAmount() + " " + this.getCategory().getCategoryName() + " " + this.getYear() + " " + this.getMonth() + " " + this.getDescription();
     }
 }
+
+class MonthlyExpense {
+    private int year;
+    private int month;
+    private Category category;
+    private double totalExpense;
+
+    public MonthlyExpense(int year, int month, Category category) {
+        this.year = year;
+        this.month = month;
+        this.category = category;
+        this.totalExpense = 0;
+    }
+
+    public void addExpense(double amount) {
+        this.totalExpense += amount;
+        if (this.totalExpense > category.getMonthlyBudget()) {
+            JOptionPane.showMessageDialog(null, "Budget exceeded for " + category.getCategoryName() + " in " + year + "-" + month);
+        }
+    }
+
+    public void deleteExpense(double amount){
+        this.totalExpense -= amount;
+    }
+
+    // Getter methods
+    public int getYear() { return year; }
+    public int getMonth() { return month; }
+    public Category getCategory() { return category; }
+    public double getTotalExpense() { return totalExpense; }
+}
+
 
 class MainGUI extends JFrame{
     private FinancialManager financialManager;
@@ -130,6 +157,8 @@ class MainGUI extends JFrame{
 class AddGUI extends JFrame{
     private FinancialManager financialManager;
     private JComboBox<String> categoryComboBox;
+    private JComboBox<Integer> yearComboBox;
+    private JComboBox<Integer> monthComboBox;
 
     public AddGUI(FinancialManager financialManager) {
         this.financialManager = financialManager;
@@ -144,13 +173,26 @@ class AddGUI extends JFrame{
         JTextField nameField = new JTextField();
         JTextField amountField = new JTextField();
         //JTextField categoryField = new JTextField();
-        JTextField dateField = new JTextField();
+        //JTextField dateField = new JTextField();
         JTextField descriptionField = new JTextField();
 
         categoryComboBox = new JComboBox<>();
         updateCategoryComboBox();
         //categoryComboBox.addItem("Add Category...");
         JPanel panel = new JPanel();
+
+        // 年份选择
+        yearComboBox = new JComboBox<>();
+        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+        for (int i = currentYear - 10; i <= currentYear + 10; i++) {
+            yearComboBox.addItem(i);
+        }
+
+        // 月份选择
+        monthComboBox = new JComboBox<>();
+        for (int i = 1; i <= 12; i++) {
+            monthComboBox.addItem(i);
+        }
 
         categoryComboBox.addActionListener(e -> {
             if ("Add Category...".equals(categoryComboBox.getSelectedItem())) {
@@ -165,8 +207,10 @@ class AddGUI extends JFrame{
         panel.add(amountField);
         panel.add(new JLabel("Category:"));
         panel.add(categoryComboBox);
-        panel.add(new JLabel("Date:"));
-        panel.add(dateField);
+        panel.add(new JLabel("Year:"));
+        panel.add(yearComboBox);
+        panel.add(new JLabel("Month:"));
+        panel.add(monthComboBox);
         panel.add(new JLabel("Description:"));
         panel.add(descriptionField);
 
@@ -179,10 +223,15 @@ class AddGUI extends JFrame{
                 double amount = Float.parseFloat(amountField.getText());
                 String categoryName = (String)categoryComboBox.getSelectedItem();
                 Category category = financialManager.getCategoryByName(categoryName);
-                String date = dateField.getText();
+                //String date = dateField.getText();
+                int selectedYear = (Integer) yearComboBox.getSelectedItem();
+                int selectedMonth = (Integer) monthComboBox.getSelectedItem();
                 String description = descriptionField.getText();
-
-                Expense newExpense = new Expense(name, amount, category, date, description);
+                //System.out.println("Name is: "+categoryName);
+                if(categoryName.equals("Add Category...")){
+                    JOptionPane.showMessageDialog(null, "Please select a category", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                }
+                Expense newExpense = new Expense(name, amount, category, selectedYear, selectedMonth, description);
                 financialManager.addExpense(newExpense);
             }catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(null, "Please enter a valid amount", "Invalid Input", JOptionPane.ERROR_MESSAGE);
@@ -255,7 +304,7 @@ class BrowseGUI extends JFrame{
                     expense.getName(),
                     expense.getAmount(),
                     expense.getCategory().getCategoryName(),
-                    expense.getDate(),
+                    expense.getYear()+"/"+expense.getMonth(),
                     expense.getDescription()
             };
             model.addRow(row);
@@ -306,19 +355,23 @@ class DeleteGUI extends JFrame{
 class FinancialManager{
     private List<Expense> expenses;
     private List<Category> categories;
+    private List<MonthlyExpense> monthlyExpenses;
 
     public FinancialManager() {
         expenses = new ArrayList<>();
         categories = new ArrayList<>();
+        monthlyExpenses = new ArrayList<>();
     }
     public void addExpense(Expense expense) {
         expenses.add(expense);
+        updateMonthlyExpenses(expense);
     }
     public List<Expense> getExpenses() {
         return expenses;
     }
     public void deleteExpense(Expense expense) {
         expenses.remove(expense);
+        decreaseMonthlyExpenses(expense);
     }
     public void addCategory(String name, double monthlyBudget) {
         categories.add(new Category(name, monthlyBudget));
@@ -333,5 +386,27 @@ class FinancialManager{
             }
         }
         return null; // Or handle this case as per your application's requirements
+    }
+    private void updateMonthlyExpenses(Expense expense) {
+        MonthlyExpense monthlyExpense = findOrCreateMonthlyExpense(expense.getYear(), expense.getMonth(), expense.getCategory());
+        monthlyExpense.addExpense(expense.getAmount());
+    }
+    private void decreaseMonthlyExpenses(Expense expense) {
+        for (MonthlyExpense me : monthlyExpenses) {
+            if (me.getYear() == expense.getYear() && me.getMonth() == expense.getMonth() && me.getCategory().equals(expense.getCategory())) {
+                MonthlyExpense monthlyExpense = me;
+                monthlyExpense.deleteExpense(expense.getAmount());
+            }
+        }
+    }
+    private MonthlyExpense findOrCreateMonthlyExpense(int year, int month, Category category) {
+        for (MonthlyExpense me : monthlyExpenses) {
+            if (me.getYear() == year && me.getMonth() == month && me.getCategory().equals(category)) {
+                return me;
+            }
+        }
+        MonthlyExpense newMonthlyExpense = new MonthlyExpense(year, month, category);
+        monthlyExpenses.add(newMonthlyExpense);
+        return newMonthlyExpense;
     }
 }

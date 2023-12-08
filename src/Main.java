@@ -88,6 +88,7 @@ class MonthlyExpense {
 }
 
 
+
 class MainGUI extends JFrame{
     private FinancialManager financialManager;
 
@@ -237,10 +238,13 @@ class AddGUI extends JFrame{
             JOptionPane.showMessageDialog(null, "Please enter a valid amount", "Invalid Input", JOptionPane.ERROR_MESSAGE);
         }
 
-            
+            Expense newExpense = new Expense(name, amount, category, date, description);
+            financialManager.addExpense(newExpense);
 
         }
     }
+}
+
 
     private void updateCategoryComboBox() {
         String currentSelection = (String) categoryComboBox.getSelectedItem();
@@ -352,6 +356,7 @@ class DeleteGUI extends JFrame{
     }
 }
     
+
 class FinancialManager{
     private List<Expense> expenses;
     private List<Category> categories;
@@ -365,12 +370,14 @@ class FinancialManager{
     public void addExpense(Expense expense) {
         expenses.add(expense);
         updateMonthlyExpenses(expense);
+
     }
     public List<Expense> getExpenses() {
         return expenses;
     }
     public void deleteExpense(Expense expense) {
         expenses.remove(expense);
+
         decreaseMonthlyExpenses(expense);
     }
     public void addCategory(String name, double monthlyBudget) {

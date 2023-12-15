@@ -232,15 +232,19 @@ class AddGUI extends JFrame{
                 String name = nameField.getText();
                 double amount = Float.parseFloat(amountField.getText());
                 String categoryName = (String)categoryComboBox.getSelectedItem();
+                if(categoryName == null || categoryName.equals("Add Category...")){
+                    JOptionPane.showMessageDialog(null, "Please select a category", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 Category category = financialManager.getCategoryByName(categoryName);
                 //String date = dateField.getText();
                 int selectedYear = (Integer) yearComboBox.getSelectedItem();
                 int selectedMonth = (Integer) monthComboBox.getSelectedItem();
                 String description = descriptionField.getText();
                 //System.out.println("Name is: "+categoryName);
-                if(categoryName.equals("Add Category...")){
-                    JOptionPane.showMessageDialog(null, "Please select a category", "Invalid Input", JOptionPane.ERROR_MESSAGE);
-                }
+//                if(categoryName.equals("Add Category...")){
+//                    JOptionPane.showMessageDialog(null, "Please select a category", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+//                }
                 Expense newExpense = new Expense(name, amount, category, selectedYear, selectedMonth, description);
                 financialManager.addExpense(newExpense);
             }catch (NumberFormatException e) {

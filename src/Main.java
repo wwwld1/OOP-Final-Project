@@ -3,10 +3,12 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.Serializable;
 import java.util.*;
 import java.util.List;
+import java.io.*;
 
-class Category {
+class Category implements Serializable{
     private String categoryName;
     private double monthlyBudget;
 
@@ -20,7 +22,7 @@ class Category {
     public double getMonthlyBudget() {return monthlyBudget;}
 }
 
-class Expense {
+class Expense implements Serializable{
     private String name;
     private double amount;
     private Category category;
@@ -55,7 +57,7 @@ class Expense {
     }
 }
 
-class MonthlyExpense {
+class MonthlyExpense implements Serializable{
     private int year;
     private int month;
     private Category category;
@@ -457,10 +459,34 @@ class FinancialManager{
         expenses = new ArrayList<>();
         categories = new ArrayList<>();
         monthlyExpenses = new ArrayList<>();
+        load_data();
+    }
+    private void save_data(){
+        try (ObjectOutputStream fout = new ObjectOutputStream(new FileOutputStream("data.bin"))) {
+            fout.writeObject(expenses);
+            fout.writeObject(categories);
+            fout.writeObject(monthlyExpenses);
+        } 
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void load_data() {
+        try (ObjectInputStream fin = new ObjectInputStream(new FileInputStream("data.bin"))) {
+            expenses = (ArrayList<Expense>) fin.readObject();
+            categories = (ArrayList<Category>) fin.readObject();
+            monthlyExpenses = (ArrayList<MonthlyExpense>) fin.readObject();
+        } 
+        catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
     public void addExpense(Expense expense) {
         expenses.add(expense);
         updateMonthlyExpenses(expense);
+        save_data();
 
     }
     public List<Expense> getExpenses() {
@@ -468,11 +494,12 @@ class FinancialManager{
     }
     public void deleteExpense(Expense expense) {
         expenses.remove(expense);
-
         decreaseMonthlyExpenses(expense);
+        save_data();
     }
     public void addCategory(String name, double monthlyBudget) {
         categories.add(new Category(name, monthlyBudget));
+        save_data();
     }
     public List<Category> getCategories() {
         return categories;
@@ -499,6 +526,7 @@ class FinancialManager{
     private void updateMonthlyExpenses(Expense expense) {
         MonthlyExpense monthlyExpense = findOrCreateMonthlyExpense(expense.getYear(), expense.getMonth(), expense.getCategory());
         monthlyExpense.addExpense(expense.getAmount());
+        save_data();
     }
     private void decreaseMonthlyExpenses(Expense expense) {
         for (MonthlyExpense me : monthlyExpenses) {
@@ -507,6 +535,7 @@ class FinancialManager{
                 monthlyExpense.deleteExpense(expense.getAmount());
             }
         }
+        save_data();
     }
     private MonthlyExpense findOrCreateMonthlyExpense(int year, int month, Category category) {
         for (MonthlyExpense me : monthlyExpenses) {

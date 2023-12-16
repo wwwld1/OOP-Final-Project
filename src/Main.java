@@ -476,7 +476,7 @@ class FinancialManager{
             monthlyExpenses = (ArrayList<MonthlyExpense>) fin.readObject();
         } 
         catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
         }
     }
     public void addExpense(Expense expense) {

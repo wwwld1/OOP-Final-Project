@@ -271,6 +271,11 @@ class AddGUI extends JFrame{
     }
 
     private void showAddCategoryDialog() {
+        ImageIcon icon = new ImageIcon("image/add.png");
+        Image image = icon.getImage();
+        Image newImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+        icon = new ImageIcon(newImage);
+
         JTextField nameField = new JTextField();
         JTextField budgetField = new JTextField();
 
@@ -281,7 +286,7 @@ class AddGUI extends JFrame{
         panel.add(new JLabel("Monthly Budget:"));
         panel.add(budgetField);
 
-        int result = JOptionPane.showConfirmDialog(this, panel, "Add Category", JOptionPane.OK_CANCEL_OPTION);
+        int result = JOptionPane.showConfirmDialog(this, panel, "Add Category", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, icon);
 
         if (result == JOptionPane.OK_OPTION) {
             String name = nameField.getText();

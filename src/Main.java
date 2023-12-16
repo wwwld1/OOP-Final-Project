@@ -92,6 +92,10 @@ class MonthlyExpense implements Serializable{
 
 class MainGUI extends JFrame{
     private FinancialManager financialManager;
+    private JButton addExpenseButton;
+    private JButton browseExpensesButton;
+    private JButton deleteExpenseButton;
+    private JButton monthlyReportButton;
 
     public MainGUI(FinancialManager financialManager){
         this.financialManager = financialManager;
@@ -99,7 +103,7 @@ class MainGUI extends JFrame{
     }
 
     private void initComponents() {
-        JButton addExpenseButton = new JButton("Add Expense");
+        addExpenseButton = new JButton("Add Expense");
         addExpenseButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -108,7 +112,7 @@ class MainGUI extends JFrame{
             }
         });
 
-        JButton browseExpensesButton = new JButton("Browse Expenses");
+        browseExpensesButton = new JButton("Browse Expenses");
         browseExpensesButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -117,7 +121,7 @@ class MainGUI extends JFrame{
             }
         });
 
-        JButton deleteExpenseButton = new JButton("Delete Expense");
+        deleteExpenseButton = new JButton("Delete Expense");
         deleteExpenseButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -126,7 +130,7 @@ class MainGUI extends JFrame{
             }
         });
 
-        JButton monthlyReportButton = new JButton("Monthly Report");
+        monthlyReportButton = new JButton("Monthly Report");
         monthlyReportButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -243,10 +247,6 @@ class AddGUI extends JFrame{
                 int selectedYear = (Integer) yearComboBox.getSelectedItem();
                 int selectedMonth = (Integer) monthComboBox.getSelectedItem();
                 String description = descriptionField.getText();
-                //System.out.println("Name is: "+categoryName);
-//                if(categoryName.equals("Add Category...")){
-//                    JOptionPane.showMessageDialog(null, "Please select a category", "Invalid Input", JOptionPane.ERROR_MESSAGE);
-//                }
                 Expense newExpense = new Expense(name, amount, category, selectedYear, selectedMonth, description);
                 financialManager.addExpense(newExpense);
             }catch (NumberFormatException e) {
@@ -286,7 +286,8 @@ class AddGUI extends JFrame{
         if (result == JOptionPane.OK_OPTION) {
             String name = nameField.getText();
             double monthlyBudget = Double.parseDouble(budgetField.getText());
-            financialManager.addCategory(name, monthlyBudget);
+            Category c = new Category(name, monthlyBudget);
+            financialManager.addCategory(c);
             updateCategoryComboBox(); // 更新下拉菜单
         }
     }
@@ -295,6 +296,7 @@ class AddGUI extends JFrame{
 
 class BrowseGUI extends JFrame{
     private FinancialManager financialManager;
+    private JScrollPane scrollPane;
 
     public BrowseGUI(FinancialManager financialManager) {
         this.financialManager = financialManager;
@@ -328,7 +330,7 @@ class BrowseGUI extends JFrame{
         JTable table = new JTable(model);
 
         // Create scroll pane and add table to it
-        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane = new JScrollPane(table);
 
         // Show dialog with scroll pane
         JOptionPane.showMessageDialog(null, scrollPane, "Browse Expenses", JOptionPane.PLAIN_MESSAGE, icon);
@@ -403,17 +405,6 @@ class MonthlyReportGUI extends JFrame{
         int result = JOptionPane.showConfirmDialog(null, panel,
                 "Monthly Report", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, icon);
 
-//        if (result == JOptionPane.OK_OPTION) {
-//            int selectedYear = (Integer) yearComboBox.getSelectedItem();
-//            int selectedMonth = (Integer) monthComboBox.getSelectedItem();
-//            List<Expense> expensesByYearAndMonth = financialManager.getExpensesByYearAndMonth(selectedYear, selectedMonth);
-//            double totalExpense = 0;
-//            for (Expense expense : expensesByYearAndMonth) {
-//                totalExpense += expense.getAmount();
-//            }
-//            JOptionPane.showMessageDialog(null, "Total Expense: " + totalExpense,
-//                    "Monthly Report", JOptionPane.INFORMATION_MESSAGE, icon);
-//        }
         if (result == JOptionPane.OK_OPTION) {
             int selectedYear = (Integer) yearComboBox.getSelectedItem();
             int selectedMonth = (Integer) monthComboBox.getSelectedItem();
@@ -497,8 +488,8 @@ class FinancialManager{
         decreaseMonthlyExpenses(expense);
         save_data();
     }
-    public void addCategory(String name, double monthlyBudget) {
-        categories.add(new Category(name, monthlyBudget));
+    public void addCategory(Category c) {
+        categories.add(c);
         save_data();
     }
     public List<Category> getCategories() {
